@@ -184,14 +184,14 @@ class Trainer:
         # Use 'DataCollatorForSeq2Seq' for 'collate_fn', passing 'tokenizer', padding settings and pad_to_multiple_of to 8, and return_tensors="pt"
         # Also add drop_last to True.
 
-        data_trainloader = None  ### YOUR CODE HERE ###
+        data_trainloader = DataLoader(train_dataset, batch_size=self.batch_size, sampler=DistributedSampler(train_dataset) if self.is_ddp_training else None, collate_fn=DataCollatorForSeq2Seq(self.tokenizer, padding="longest", pad_to_multiple_of=8, return_tensors="pt"), drop_last=True) ### YOUR CODE HERE ###
 
         # TODO: Prepare the evaluation DataLoader. Initialize 'DataLoader' with 'eval_dataset',
         # the appropriate 'batch_size', and 'SequentialSampler' for 'sampler'.
         # Use 'DataCollatorForSeq2Seq' for 'collate_fn', passing 'tokenizer', padding settings and pad_to_multiple_of to 8, and return_tensors="pt".
         # Also add drop_last to True.
 
-        data_testloader = None ### YOUR CODE HERE ###
+        data_testloader = DataLoader(eval_dataset, batch_size=self.batch_size, sampler=SequentialSampler(eval_dataset), collate_fn=DataCollatorForSeq2Seq(self.tokenizer, padding="longest", pad_to_multiple_of=8, return_tensors="pt"), drop_last=True) ### YOUR CODE HERE ###
 
         return data_trainloader, data_testloader
 
@@ -297,17 +297,17 @@ def load_pretrained_model(local_rank, model_path: str = ""):
     # Make sure to set 'device_map' to '{"": torch.device(f"cuda:{local_rank}")}' for DDP training
     # and trust_remote_code=True.
 
-    model = None ### YOUR CODE HERE ###
+    model = AutoModelForCausalLM.from_pretrained(model_path, trust_remote_code=True, device_map={"": torch.device(f"cuda:{local_rank}")}) ### YOUR CODE HERE ###
 
     # TODO: Create a LoraConfig with the parameters: 
     # r=4, lora_alpha=8, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM"
     # We will then use the config to initialize a LoraModelForCasualLM with the loaded model.
 
-    lora_config = None ### YOUR CODE HERE ###
+    lora_config = LoraConfig(r=4, lora_alpha=8, lora_dropout=0.05, bias="none", task_type="CAUSAL_LM") ### YOUR CODE HERE ###
 
     # TODO: Create LoRA model
 
-    model = None  ### YOUR CODE HERE ###
+    model = LoraModelForCasualLM(model, lora_config) ### YOUR CODE HERE ###
 
     if _is_master_process():
         model.print_trainable_parameters()
